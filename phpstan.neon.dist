@@ -1,4 +1,31 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
 parameters:
     level: 5
     paths:
         - src
+
+    ignoreErrors:
+        -
+            identifier: varTag.nativeType
+            path: src/NavigationGroupServiceProvider.php
+            # Filament's Macroable trait rebinds $this to the real
+            # NavigationGroup/NavigationItem instance at call time
+            # (`$macro->bindTo($this, static::class)`), which PHPStan can't
+            # see past — it always types $this as this ServiceProvider. The
+            # @var above each macro body is what makes the rest of that
+            # closure typecheck correctly.
+        -
+            identifier: method.notFound
+            path: src/Navigation/ExtendedNavigationManager.php
+            # NavigationItem::groupSort()/getGroupSort() and
+            # NavigationGroup::sort()/getSort() are added at runtime as
+            # macros by NavigationGroupServiceProvider — present on every
+            # instance by the time get() runs, but PHPStan only sees
+            # Filament's own class definitions.
+        -
+            identifier: trait.unused
+            path: src/Concerns/HasNavigationGroupSort.php
+            # Public API trait: consumers `use` it on their own Resource/Page
+            # classes, so it's never referenced from within this package.
